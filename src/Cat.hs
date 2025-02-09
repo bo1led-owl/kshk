@@ -9,10 +9,9 @@ import Tree
 --  /\  / o o \
 -- //\\ \~(*)~/
 -- `  \/   ^ /
---    | \|| ||  Lara
---    \ '|| ||  Allen
+--    | \|| ||
+--    \ '|| ||
 --     \)()-())
--- nothing here for now
 
 execExprs :: M.Map String Expr -> [Expr] -> (M.Map String Expr, [IO String])
 execExprs m (e : es) =

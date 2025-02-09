@@ -8,6 +8,11 @@ import qualified Text.Parsec.Prim as Parsec
 import Text.ParserCombinators.Parsec hiding (parse)
 import Tree
 
+--   , ___
+-- `\/{o,o}
+--  / /)  )
+-- /,--"-"-
+
 inParens :: (GenParser Char st a) -> GenParser Char st a
 inParens = between (char '(' *> spaces) (spaces *> char ')')
 

@@ -24,7 +24,7 @@ main = runInputT defaultSettings (loop M.empty)
             (Right e) -> do
               let (newMap, output) = exec m e
               out <- liftIO output
-              if not $ L.null out && last out /= '\n'
+              if not (L.null out) && last out /= '\n'
                 then
                   outputStrLn out
                 else
