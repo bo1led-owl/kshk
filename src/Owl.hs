@@ -2,6 +2,7 @@
 
 module Owl (parse) where
 
+import Data.List.NonEmpty
 import Text.Parsec.Char
 import Text.Parsec.Combinator
 import qualified Text.Parsec.Prim as Parsec
@@ -35,23 +36,18 @@ def = inParens $
 cmd :: GenParser Char st Expr
 cmd = inParens $
   do
-    c <- path
+    c <- expr
     spaces
     args <- many (spaces *> expr)
-    return (Cmd c args)
-  where
-    path :: GenParser Char st String
-    path =
-      try (between (char '`') (char '`') (many anyChar)) <|> do
-        first <- try (char '/') <|> letter
-        rest <- many (try (char '/') <|> alphaNum)
-        return (first : rest)
+    return (Cmd (c :| args))
 
 lit :: GenParser Char st Expr
-lit = Lit <$> between (char '"') (char '"') (many $ satisfy (/= '"'))
+lit = Lit <$> (try (quoted (many $ satisfy (/= '"'))) <|> many1 alphaNum)
+  where
+    quoted = between (char '"') (char '"')
 
 varRef :: GenParser Char st Expr
-varRef = VarRef <$> varName
+varRef = VarRef <$> (char '$' *> varName)
 
 expr :: GenParser Char st Expr
 expr = try def <|> try cmd <|> try varRef <|> lit

@@ -1,8 +1,10 @@
 module Tree where
 
+import Data.List.NonEmpty
+
 data Expr
   = Def String Expr
   | VarRef String
-  | Cmd String [Expr]
+  | Cmd (NonEmpty Expr)
   | Lit String
   deriving (Show)
