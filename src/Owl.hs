@@ -38,4 +38,3 @@ expr = try def <|> try cmd <|> lit
 
 parse :: String -> Either ParseError Expr
 parse = Parsec.parse expr ""
-
