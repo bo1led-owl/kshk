@@ -1,4 +1,4 @@
-module Cat where
+module Cat (exec) where
 
 import Data.Functor ((<&>))
 import Data.List (intersperse)
