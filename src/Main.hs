@@ -7,7 +7,7 @@ main = runInputT defaultSettings loop
   where
     loop :: InputT IO ()
     loop = do
-      minput <- getInputLine "% "
+      minput <- getInputLine "hsh ~ "
       case minput of
         Nothing -> return ()
         Just "quit" -> return ()
