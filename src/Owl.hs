@@ -1,23 +1,27 @@
+{-# OPTIONS_GHC -Wno-unused-do-bind #-}
+
 module Owl (parse) where
 
-import AST
+import Text.Parsec.Char
 import Text.Parsec.Combinator
-import Text.Parsec.Prim hiding (parse)
-import qualified Text.Parsec.Prim as Parsec (parse)
+import qualified Text.Parsec.Prim as Parsec
+import Text.ParserCombinators.Parsec hiding (parse)
+import Tree
 
 inParens :: (GenParser Char st a) -> GenParser Char st a
-inParens = between (char '(') (char ')')
+inParens = between (char '(' *> spaces) (spaces *> char ')')
 
 def :: GenParser Char st Expr
 def = inParens $
   do
-    spaces
     string "def"
+    spaces
     name <- varName
+    spaces
     value <- expr
-    return (Cmd name args)
+    return (Def name value)
   where
-    varName :: GenParser Char st Expr
+    varName :: GenParser Char st String
     varName = do
       first <- letter
       rest <- many alphaNum
@@ -29,5 +33,9 @@ cmd = undefined
 lit :: GenParser Char st Expr
 lit = undefined
 
-parse :: GenParser Char st Expr
-parse = try def <|> try cmd <|> lit
+expr :: GenParser Char st Expr
+expr = try def <|> try cmd <|> lit
+
+parse :: String -> Either ParseError Expr
+parse = Parsec.parse expr ""
+
