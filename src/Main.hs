@@ -21,5 +21,5 @@ main = runInputT defaultSettings (loop empty)
             (Right e) -> do
               let (newMap, output) = exec m e
               out <- liftIO output
-              outputStrLn out
+              outputStr out
               loop newMap
