@@ -1,8 +1,7 @@
 module Cat (exec) where
 
-import Data.Functor ((<&>))
-import Data.List (intersperse)
 import qualified Data.Map as M
+import Data.Maybe
 import Spearfish (execCommand)
 import Tree
 
@@ -34,3 +33,4 @@ exec vars (Cmd s e) =
         execCommand s args
    in (vars, outstr)
 exec vars (Lit str) = (vars, return str)
+exec vars (VarRef name) = exec vars (fromMaybe (Lit "") (M.lookup name vars))
