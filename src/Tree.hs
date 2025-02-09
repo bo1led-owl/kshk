@@ -1,4 +1,4 @@
-module AST where
+module Tree where
 
 data Expr
   = Def String Expr

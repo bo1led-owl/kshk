@@ -1,4 +1,4 @@
-module Parser (parse) where
+module Owl (parse) where
 
 import AST
 import Text.Parsec.Combinator
