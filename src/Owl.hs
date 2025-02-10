@@ -2,7 +2,6 @@
 
 module Owl (parse) where
 
-import Data.List.NonEmpty
 import Text.Parsec.Char
 import Text.Parsec.Combinator
 import qualified Text.Parsec.Prim as Parsec
@@ -17,40 +16,53 @@ import Tree
 inParens :: (GenParser Char st a) -> GenParser Char st a
 inParens = between (char '(' *> spaces) (spaces *> char ')')
 
-varName :: GenParser Char st String
-varName = do
+funcName :: GenParser Char st String
+funcName = do
   first <- letter
   rest <- many alphaNum
   return (first : rest)
+
+procName :: GenParser Char st String
+procName = do
+  char '@'
+  many1 (try alphaNum <|> char '/')
 
 def :: GenParser Char st Expr
 def = inParens $
   do
     string "def"
     spaces
-    name <- varName
+    name <- funcName
     spaces
     value <- expr
-    return (Def name value)
+    return (Def name [] value)
 
-cmd :: GenParser Char st Expr
-cmd = inParens $
-  do
-    c <- expr
-    spaces
-    args <- many (spaces *> expr)
-    return (Cmd (c :| args))
+flit :: GenParser Char st Expr
+flit = do
+  char '\''
+  name <- funcName
+  return $ FLit name
 
-lit :: GenParser Char st Expr
-lit = Lit <$> (try (quoted (many $ satisfy (/= '"'))) <|> many1 alphaNum)
+plit :: GenParser Char st Expr
+plit = do
+  char '\''
+  name <- procName
+  return $ PLit name
+
+slit :: GenParser Char st Expr
+slit = SLit <$> quoted chars
   where
     quoted = between (char '"') (char '"')
+    chars = many (satisfy (/= '"'))
 
-varRef :: GenParser Char st Expr
-varRef = VarRef <$> (char '$' *> varName)
+exec :: GenParser Char st Expr
+exec = inParens $ do
+  name <- (try (PLit <$> procName) <|> try (FLit <$> funcName) <|> expr)
+  args <- many (spaces *> expr)
+  return $ Exec name args
 
 expr :: GenParser Char st Expr
-expr = try def <|> try cmd <|> try varRef <|> lit
+expr = try def <|> try exec <|> try slit <|> try flit <|> plit
 
 parse :: String -> Either ParseError Expr
 parse = Parsec.parse expr ""
