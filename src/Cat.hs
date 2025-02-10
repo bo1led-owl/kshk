@@ -8,17 +8,32 @@ import Spearfish
 import System.Directory (getHomeDirectory, setCurrentDirectory)
 import Tree
 
-builtin = [("cd", cd)]
+builtin = [("cd", cd), ("+", plus)]
 
-cd :: [Expr] -> EState -> IO String
+plus :: [Expr] -> EState -> IO Ret
+plus es st = do
+  xs <- args
+  let ret =
+        foldr
+          ( \x acc -> case x of
+              Str s -> error "tried to sum string"
+              I n -> acc + n
+          )
+          0
+          xs
+  return $ I ret
+  where
+    args = traverse (`execExpr` st) es
+
+cd :: [Expr] -> EState -> IO Ret
 cd e st = do
   dir <- new_dir
   setCurrentDirectory dir
-  return ""
+  return $ Str ""
   where
     new_dir = case e of
       [] -> getHomeDirectory
-      [x] -> execExpr x st
+      [x] -> show <$> execExpr x st
       _ -> error "Too many args for cd command"
 
 data EState = ExecutorState
@@ -26,9 +41,15 @@ data EState = ExecutorState
     funcs :: M.Map String ([String], Expr)
   }
 
-execExpr :: Expr -> EState -> IO String
-execExpr (StrLit s) st = return s
-execExpr (ProcCall s e) st = execCommand' s (sequenceA $ args e)
+execExpr :: Expr -> EState -> IO Ret
+-- execExpr (NumLit n) st = return
+execExpr (StrLit s) st = return (Str s)
+execExpr (ProcCall s e) st = do
+  let arg = args e
+  let rets = sequenceA arg
+  actual_arg_ret <- rets
+  res <- execCommand' s (fmap show actual_arg_ret)
+  return (Str res)
   where
     args (ex : exs) = execExpr ex st : args exs
     args [] = []
@@ -57,8 +78,14 @@ execExpr (VarRef s) st = executedRef
       Nothing -> error "reference to undefined variable"
       Just expr -> expr
 
-execExprTopLevel :: Expr -> EState -> IO String
-execExprTopLevel (ProcCall s e) st = do execCommand s (sequenceA $ args e); return ""
+execExprTopLevel :: Expr -> EState -> IO Ret
+-- execExpr (ProcCall s e) st = execCommand' s (fmap (\x -> fmap show x) $ args e)
+execExprTopLevel (ProcCall s e) st = do
+  let arg = args e
+  let rets = sequenceA arg
+  actual_arg_ret <- rets
+  execCommand s $ fmap show actual_arg_ret
+  return (Str "")
   where
     args (ex : exs) = execExpr ex st : args exs
     args [] = []
@@ -69,4 +96,4 @@ execDef (VarDef s e) st = st {vars = M.insert s e (vars st)}
 execDef (FuncDef s names e) st = st {funcs = M.insert s (names, e) (funcs st)}
 
 exec (D d) st = (execDef d st, return "")
-exec (E e) st = (st, execExprTopLevel e st)
+exec (E e) st = (st, show <$> execExprTopLevel e st)
