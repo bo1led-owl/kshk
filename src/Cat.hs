@@ -5,10 +5,56 @@ import qualified Data.List as L
 import qualified Data.Map as M
 import Data.Maybe
 import Spearfish
+import System.Console.Haskeline (outputStrLn)
 import System.Directory (getHomeDirectory, setCurrentDirectory)
 import Tree
 
-builtin = [("cd", cd), ("+", plus)]
+builtin = [("cd", cd), ("+", plus), ("scons", scons), ("*", mult), ("-", minus)]
+
+minus :: [Expr] -> EState -> IO Ret
+minus es st = do
+  xs <- args
+  let ret =
+        foldl
+          ( \acc x -> case x of
+              I n -> acc - n
+              _ -> error "tried to diff not a number :)"
+          )
+          0
+          xs
+  return $ I ret
+  where
+    args = traverse (`execExpr` st) es
+
+mult :: [Expr] -> EState -> IO Ret
+mult es st = do
+  xs <- args
+  let ret =
+        foldl
+          ( \acc x -> case x of
+              I n -> acc * n
+              _ -> error "tried to sum not a number :)"
+          )
+          1
+          xs
+  return $ I ret
+  where
+    args = traverse (`execExpr` st) es
+
+scons :: [Expr] -> EState -> IO Ret
+scons es st = do
+  xs <- args
+  let ret =
+        foldl
+          ( \acc x -> case x of
+              Str n -> acc ++ n
+              _ -> error "tried to sum not a string :)"
+          )
+          ""
+          xs
+  return $ Str ret
+  where
+    args = traverse (`execExpr` st) es
 
 plus :: [Expr] -> EState -> IO Ret
 plus es st = do
@@ -48,7 +94,7 @@ execExpr (ProcCall s e) st = do
   let arg = args e
   let rets = sequenceA arg
   actual_arg_ret <- rets
-  res <- execCommand' s (fmap show actual_arg_ret)
+  res <- execCommand' s (map showRet actual_arg_ret)
   return (Str res)
   where
     args (ex : exs) = execExpr ex st : args exs
@@ -79,12 +125,11 @@ execExpr (VarRef s) st = executedRef
       Just expr -> expr
 
 execExprTopLevel :: Expr -> EState -> IO Ret
--- execExpr (ProcCall s e) st = execCommand' s (fmap (\x -> fmap show x) $ args e)
 execExprTopLevel (ProcCall s e) st = do
   let arg = args e
   let rets = sequenceA arg
   actual_arg_ret <- rets
-  execCommand s $ fmap show actual_arg_ret
+  execCommand s $ fmap showRet actual_arg_ret
   return (Str "")
   where
     args (ex : exs) = execExpr ex st : args exs
@@ -96,7 +141,7 @@ execDef (VarDef s e) st = st {vars = M.insert s e (vars st)}
 execDef (FuncDef s names e) st = st {funcs = M.insert s (names, e) (funcs st)}
 
 showRet (I i) = show i
-showRet (Str s) = show s
+showRet (Str s) = if s == "" then "" else show s
 showRet (B b) = if b then "#t" else "#f"
 
 exec (D d) st = (execDef d st, return "")
