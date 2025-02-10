@@ -42,20 +42,21 @@ main = do
       minput <- getInputLine $ prompt
       case minput of
         Nothing -> return ()
-        Just input -> do
-          case parseForInteractive input of
-            (Left err) -> do outputStrLn $ show err; loop st
-            (Right stmtOrOpt) ->
-              case stmtOrOpt of
-                (O opt) ->
-                  let newSt = case opt of "cwd" -> st {cwd = not $ cwd st}
-                   in loop newSt
-                (S s) -> do
-                  let (newEState, output) = exec s (executorState st)
-                  out <- liftIO output
-                  if not (L.null out) && last out /= '\n'
-                    then
-                      outputStrLn out
-                    else
-                      outputStr out
-                  loop st {executorState = newEState}
+        Just input -> parseAndExecute st input
+    parseAndExecute st input = do
+      case parseForInteractive input of
+        (Left err) -> do outputStrLn $ show err; loop st
+        (Right (O opt)) -> handleOption st opt
+        (Right (S s)) -> handleStmt st s
+    handleOption st opt =
+      let newSt = case opt of "cwd" -> st {cwd = not $ cwd st}
+       in loop newSt
+    handleStmt st s = do
+      let (newEState, output) = exec s (executorState st)
+      out <- liftIO output
+      if not (L.null out) && last out /= '\n'
+        then
+          outputStrLn out
+        else
+          outputStr out
+      loop st {executorState = newEState}
