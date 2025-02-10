@@ -1,9 +1,10 @@
 module Tree where
 
 data Expr
-  = Def String [String] Expr
-  | Exec Expr [Expr]
-  | SLit String
-  | FLit String
-  | PLit String
+  = VarDef String Expr
+  | FuncDef String [String] Expr
+  | FuncCall String [Expr]
+  | ProcCall String [Expr]
+  | VarRef String
+  | StrLit String
   deriving (Show)
