@@ -14,8 +14,11 @@ import Tree
 --    \ '|| ||
 --     \)()-())
 
-execExpr (StrLit s) st = s
-execExpr (ProcCall s e) st = undefined
+execExpr (StrLit s) st = return s
+execExpr (ProcCall s e) st = execCommand s (sequenceA $ args e)
+  where
+    args (ex : exs) = execExpr ex st : args exs
+    args [] = []
 execExpr (FuncCall s e) st =
   if length e /= length names
     then error "incorrect amount of arguments given to a function"
