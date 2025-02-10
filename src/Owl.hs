@@ -27,7 +27,17 @@ varName = do
 name :: GenParser Char st Name
 name = try (FuncName <$> funcName) <|> ProcName <$> procName
   where
-    funcName = try (string "+") <|> try (string "-") <|> try (string "*") <|> varName
+    funcName =
+      try (string "+")
+        <|> try (string "-")
+        <|> try (string "*")
+        <|> try (string "<")
+        <|> try (string ">")
+        <|> try (string "<=")
+        <|> try (string ">=")
+        <|> try (string "==")
+        <|> try (string "!=")
+        <|> varName
     procName = do
       char '@'
       many1 (try alphaNum <|> char '/')
