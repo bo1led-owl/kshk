@@ -13,9 +13,10 @@ import System.Process
 --  /.' (_.'----''./'
 --                '
 
-execCommand :: String -> [String] -> IO String
+execCommand :: String -> IO [String] -> IO String
 execCommand cmd args = do
-  let proccess = proc cmd args
+  act_args <- args
+  let proccess = proc cmd act_args
   (_, _, _, handle) <- createProcess proccess
   waitForProcess handle
   return ""
