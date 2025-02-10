@@ -10,6 +10,7 @@ data Def
 data Expr
   = FuncCall String [Expr]
   | ProcCall String [Expr]
+  | If Expr Expr Expr
   | VarRef String
   | StrLit String
   | NumLit Int

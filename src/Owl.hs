@@ -79,8 +79,19 @@ call = inParens $ do
       FuncName s -> FuncCall s args
       ProcName s -> ProcCall s args
 
+ifExpr :: GenParser Char st Expr
+ifExpr = inParens $ do
+  string "if"
+  spaces
+  cond <- expr
+  spaces
+  lhs <- expr
+  spaces
+  rhs <- expr
+  return (If cond lhs rhs)
+
 expr :: GenParser Char st Expr
-expr = try call <|> try varRef <|> try strLit <|> numLit
+expr = try ifExpr <|> try call <|> try varRef <|> try strLit <|> numLit
 
 stmt :: GenParser Char st Stmt
 stmt = spaces *> (try def <|> (E <$> expr))
