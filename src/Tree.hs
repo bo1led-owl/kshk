@@ -1,10 +1,9 @@
 module Tree where
 
-import Data.List.NonEmpty
-
 data Expr
-  = Def String Expr
-  | VarRef String
-  | Cmd (NonEmpty Expr)
-  | Lit String
+  = Def String [String] Expr
+  | Exec Expr [Expr]
+  | SLit String
+  | FLit String
+  | PLit String
   deriving (Show)
