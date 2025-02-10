@@ -19,7 +19,7 @@ data IState = InteractiveState
 initState startVars =
   InteractiveState
     { executorState = ExecutorState {vars = startVars, funcs = M.empty},
-      cwd = True
+      cwd = False
     }
 
 getPrompt :: IState -> IO String
@@ -48,9 +48,11 @@ main = do
         (Left err) -> do outputStrLn $ show err; loop st
         (Right (O opt)) -> handleOption st opt
         (Right (S s)) -> handleStmt st s
-    handleOption st opt =
-      let newSt = case opt of "cwd" -> st {cwd = not $ cwd st}
-       in loop newSt
+    handleOption st opt = loop newSt
+      where
+        newSt = case opt of
+          "cwd" -> st {cwd = not $ cwd st}
+          _ -> st
     handleStmt st s = do
       let (newEState, output) = exec s (executorState st)
       out <- liftIO output

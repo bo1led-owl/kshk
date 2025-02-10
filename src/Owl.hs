@@ -63,6 +63,9 @@ strLit = StrLit <$> quoted chars
     quoted = between (char '"') (char '"')
     chars = many (satisfy (/= '"'))
 
+numLit :: GenParser Char st Expr
+numLit = (NumLit . read) <$> (many1 digit)
+
 varRef :: GenParser Char st Expr
 varRef = VarRef <$> varName
 
@@ -77,7 +80,7 @@ call = inParens $ do
       ProcName s -> ProcCall s args
 
 expr :: GenParser Char st Expr
-expr = try call <|> try varRef <|> strLit
+expr = try call <|> try varRef <|> try strLit <|> numLit
 
 stmt :: GenParser Char st Stmt
 stmt = spaces *> (try def <|> (E <$> expr))

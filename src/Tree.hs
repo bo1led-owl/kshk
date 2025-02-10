@@ -12,6 +12,7 @@ data Expr
   | ProcCall String [Expr]
   | VarRef String
   | StrLit String
+  | NumLit Int
   deriving (Show)
 
 type Option = String
