@@ -6,10 +6,14 @@ import qualified Data.List as L
 import qualified Data.Map as M
 import Owl
 import System.Console.Haskeline
+import System.Environment
 import Tree
 
 main :: IO ()
-main = runInputT defaultSettings (loop M.empty)
+main = do
+  env <- getEnvironment
+  let startVars = M.fromList (map (\(k, v) -> (k, Lit v)) env)
+  runInputT defaultSettings (loop startVars)
   where
     loop :: M.Map String Expr -> InputT IO ()
     loop m = do

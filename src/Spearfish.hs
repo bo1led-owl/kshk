@@ -15,7 +15,7 @@ import System.Process
 
 execCommand :: String -> [String] -> IO String
 execCommand cmd args = do
-  let proccess = (proc cmd args) {std_out = UseHandle stdout}
+  let proccess = proc cmd args
   (_, _, _, handle) <- createProcess proccess
   waitForProcess handle
   return ""
