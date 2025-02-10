@@ -1,18 +1,25 @@
 module Cat (exec, EState (State, vars, funcs)) where
 
 import Data.Foldable
+import qualified Data.List as L
 import qualified Data.Map as M
 import Data.Maybe
 import Spearfish
+import System.Directory (getHomeDirectory, setCurrentDirectory)
 import Tree
 
---       /\_/\
---  /\  / o o \
--- //\\ \~(*)~/
--- `  \/   ^ /
---    | \|| ||
---    \ '|| ||
---     \)()-())
+builtin = [("cd", cd)]
+
+cd :: [Expr] -> EState -> IO String
+cd e st = do
+  dir <- new_dir
+  setCurrentDirectory dir
+  return ""
+  where
+    new_dir = case e of
+      [] -> getHomeDirectory
+      [x] -> execExpr x st
+      _ -> error "Too many args for cd command"
 
 data EState = State
   { vars :: M.Map String Expr,
@@ -26,10 +33,15 @@ execExpr (ProcCall s e) st = execCommand' s (sequenceA $ args e)
     args (ex : exs) = execExpr ex st : args exs
     args [] = []
 execExpr (FuncCall s e) st =
-  if length e /= length names
-    then error "incorrect amount of arguments given to a function"
-    else execExpr fnExpr $ go names e st
+  case isBuiltin of
+    Nothing -> defaultFunc
+    Just builtin -> builtin e st
   where
+    isBuiltin = L.lookup s builtin
+    defaultFunc =
+      if length e /= length names
+        then error "incorrect amount of arguments given to a function"
+        else execExpr fnExpr $ go names e st
     (names, fnExpr) = case M.lookup s (funcs st) of
       Nothing -> error "reference to undefined func"
       Just f -> f

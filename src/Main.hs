@@ -7,6 +7,7 @@ import qualified Data.List as L
 import qualified Data.Map as M
 import Owl
 import System.Console.Haskeline
+import System.Directory
 import System.Environment
 import Tree
 
@@ -14,14 +15,15 @@ main :: IO ()
 main = do
   env <- getEnvironment
   let startVars = M.fromList (map (second StrLit) env)
-  runInputT defaultSettings (loop (State{ vars = startVars, funcs = M.empty }))
+  runInputT defaultSettings (loop (State {vars = startVars, funcs = M.empty}))
   where
     loop :: EState -> InputT IO ()
     loop st = do
-      minput <- getInputLine "λ "
+      dir <- liftIO getCurrentDirectory
+      minput <- getInputLine $ dir ++ " λ "
       case minput of
         Nothing -> return ()
-        Just (input) -> case parse input of
+        Just input -> case parse input of
           (Left err) -> do
             outputStrLn $ show err
             loop st
