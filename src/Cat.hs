@@ -9,7 +9,10 @@ import System.Console.Haskeline (outputStrLn)
 import System.Directory (getHomeDirectory, setCurrentDirectory)
 import Tree
 
-builtin = [("cd", cd), ("+", plus), ("scons", scons), ("*", mult), ("-", minus)]
+builtin = [("cd", cd), ("+", plus), ("scons", scons), ("*", mult), ("-", minus), ("ГОЙДА", goida)]
+
+goida :: [Expr] -> EState -> IO Ret
+goida es st = return (Str "СВО")
 
 minus :: [Expr] -> EState -> IO Ret
 minus es st = do
@@ -141,7 +144,7 @@ execDef (VarDef s e) st = st {vars = M.insert s e (vars st)}
 execDef (FuncDef s names e) st = st {funcs = M.insert s (names, e) (funcs st)}
 
 showRet (I i) = show i
-showRet (Str s) = if s == "" then "" else show s
+showRet (Str s) = if s == "" then "" else read $ show s
 showRet (B b) = if b then "#t" else "#f"
 
 exec (D d) st = (execDef d st, return "")
