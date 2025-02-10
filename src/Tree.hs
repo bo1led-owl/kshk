@@ -14,6 +14,7 @@ data Expr
   | VarRef String
   | StrLit String
   | NumLit Int
+  | BoolLit Bool
   deriving (Show)
 
 type Option = String

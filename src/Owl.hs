@@ -66,6 +66,12 @@ strLit = StrLit <$> quoted chars
 numLit :: GenParser Char st Expr
 numLit = (NumLit . read) <$> (many1 digit)
 
+boolLit :: GenParser Char st Expr
+boolLit = BoolLit <$> (try true <|> false)
+  where
+    true = do string "#t"; return True
+    false = do string "#f"; return False
+
 varRef :: GenParser Char st Expr
 varRef = VarRef <$> varName
 
@@ -91,7 +97,7 @@ ifExpr = inParens $ do
   return (If cond lhs rhs)
 
 expr :: GenParser Char st Expr
-expr = try ifExpr <|> try call <|> try varRef <|> try strLit <|> numLit
+expr = try ifExpr <|> try call <|> try varRef <|> try boolLit <|> try strLit <|> numLit
 
 stmt :: GenParser Char st Stmt
 stmt = spaces *> (try def <|> (E <$> expr))
