@@ -16,8 +16,8 @@ plus es st = do
   let ret =
         foldr
           ( \x acc -> case x of
-              Str s -> error "tried to sum string"
               I n -> acc + n
+              _ -> error "tried to sum not a number :)"
           )
           0
           xs
@@ -42,7 +42,7 @@ data EState = ExecutorState
   }
 
 execExpr :: Expr -> EState -> IO Ret
--- execExpr (NumLit n) st = return
+execExpr (NumLit n) st = return (I n)
 execExpr (StrLit s) st = return (Str s)
 execExpr (ProcCall s e) st = do
   let arg = args e
@@ -95,5 +95,9 @@ execDef :: Def -> EState -> EState
 execDef (VarDef s e) st = st {vars = M.insert s e (vars st)}
 execDef (FuncDef s names e) st = st {funcs = M.insert s (names, e) (funcs st)}
 
+showRet (I i) = show i
+showRet (Str s) = show s
+showRet (B b) = if b then "#t" else "#f"
+
 exec (D d) st = (execDef d st, return "")
-exec (E e) st = (st, show <$> execExprTopLevel e st)
+exec (E e) st = (st, showRet <$> execExprTopLevel e st)
