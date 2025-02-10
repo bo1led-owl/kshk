@@ -13,10 +13,17 @@ import System.Process
 --  /.' (_.'----''./'
 --                '
 
-execCommand :: String -> IO [String] -> IO String
+execCommand :: String -> IO [String] -> IO ()
 execCommand cmd args = do
   act_args <- args
   let proccess = proc cmd act_args
   (_, _, _, handle) <- createProcess proccess
   waitForProcess handle
-  return ""
+  return ()
+
+execCommand' :: String -> IO [String] -> IO String
+execCommand' cmd args = do
+  act_args <- args
+  let proccess = (proc cmd act_args) {std_out = CreatePipe}
+  (_, Just out, _, _) <- createProcess proccess
+  hGetContents' out

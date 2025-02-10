@@ -1,15 +1,10 @@
-module Cat (exec, EState(State, vars, funcs)) where
+module Cat (exec, EState (State, vars, funcs)) where
 
 import Data.Foldable
 import qualified Data.Map as M
 import Data.Maybe
-import Spearfish (execCommand)
+import Spearfish
 import Tree
-
-data EState = State
-  { vars :: M.Map String Expr,
-    funcs :: M.Map String ([String], Expr)
-  }
 
 --       /\_/\
 --  /\  / o o \
@@ -19,8 +14,14 @@ data EState = State
 --    \ '|| ||
 --     \)()-())
 
+data EState = State
+  { vars :: M.Map String Expr,
+    funcs :: M.Map String ([String], Expr)
+  }
+
+execExpr :: Expr -> EState -> IO String
 execExpr (StrLit s) st = return s
-execExpr (ProcCall s e) st = execCommand s (sequenceA $ args e)
+execExpr (ProcCall s e) st = execCommand' s (sequenceA $ args e)
   where
     args (ex : exs) = execExpr ex st : args exs
     args [] = []
@@ -44,9 +45,16 @@ execExpr (VarRef s) st = executedRef
       Nothing -> error "reference to undefined variable"
       Just expr -> expr
 
+execExprTopLevel :: Expr -> EState -> IO String
+execExprTopLevel (ProcCall s e) st = do execCommand s (sequenceA $ args e); return ""
+  where
+    args (ex : exs) = execExpr ex st : args exs
+    args [] = []
+execExprTopLevel e st = execExpr e st
+
 execDef :: Def -> EState -> EState
 execDef (VarDef s e) st = State {vars = M.insert s e (vars st), funcs = funcs st}
 execDef (FuncDef s names e) st = State {funcs = M.insert s (names, e) (funcs st), vars = vars st}
 
 exec (D d) st = (execDef d st, return "")
-exec (E e) st = (st, execExpr e st)
+exec (E e) st = (st, execExprTopLevel e st)

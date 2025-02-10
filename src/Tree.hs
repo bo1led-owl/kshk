@@ -1,11 +1,11 @@
 module Tree where
 
+data Stmt = E Expr | D Def deriving (Show)
+
 data Def
   = VarDef String Expr
   | FuncDef String [String] Expr
   deriving (Show)
-
-data Stmt = E Expr | D Def deriving (Show)
 
 data Expr
   = FuncCall String [Expr]

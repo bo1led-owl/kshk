@@ -80,7 +80,7 @@ expr :: GenParser Char st Expr
 expr = try call <|> try varRef <|> strLit
 
 stmt :: GenParser Char st Stmt
-stmt = try def <|> (E <$> expr)
+stmt = spaces *> (try def <|> (E <$> expr))
 
 parse :: String -> Either ParseError Stmt
 parse = Parsec.parse stmt ""
