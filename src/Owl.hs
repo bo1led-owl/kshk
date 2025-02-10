@@ -13,56 +13,74 @@ import Tree
 --  / /)  )
 -- /,--"-"-
 
+data Name = FuncName String | ProcName String deriving (Show)
+
 inParens :: (GenParser Char st a) -> GenParser Char st a
 inParens = between (char '(' *> spaces) (spaces *> char ')')
 
-funcName :: GenParser Char st String
-funcName = do
+varName :: GenParser Char st String
+varName = do
   first <- letter
   rest <- many alphaNum
   return (first : rest)
 
-procName :: GenParser Char st String
-procName = do
-  char '@'
-  many1 (try alphaNum <|> char '/')
+name :: GenParser Char st Name
+name = try (FuncName <$> funcName) <|> ProcName <$> procName
+  where
+    funcName = varName
+    procName = do
+      char '@'
+      many1 (try alphaNum <|> char '/')
 
-def :: GenParser Char st Expr
-def = inParens $
+def :: GenParser Char st Stmt
+def = D <$> (try varDef <|> funcDef)
+
+varDef :: GenParser Char st Def
+varDef = inParens $
   do
     string "def"
     spaces
-    name <- funcName
+    n <- varName
     spaces
     value <- expr
-    return (Def name [] value)
+    return (VarDef n value)
 
-flit :: GenParser Char st Expr
-flit = do
-  char '\''
-  name <- funcName
-  return $ FLit name
+funcDef :: GenParser Char st Def
+funcDef = inParens $
+  do
+    string "def"
+    spaces
+    n <- varName
+    spaces
+    args <- inParens (many (spaces *> varName))
+    spaces
+    value <- expr
+    return (FuncDef n args value)
 
-plit :: GenParser Char st Expr
-plit = do
-  char '\''
-  name <- procName
-  return $ PLit name
-
-slit :: GenParser Char st Expr
-slit = SLit <$> quoted chars
+strLit :: GenParser Char st Expr
+strLit = StrLit <$> quoted chars
   where
     quoted = between (char '"') (char '"')
     chars = many (satisfy (/= '"'))
 
-exec :: GenParser Char st Expr
-exec = inParens $ do
-  name <- (try (PLit <$> procName) <|> try (FLit <$> funcName) <|> expr)
+varRef :: GenParser Char st Expr
+varRef = VarRef <$> varName
+
+call :: GenParser Char st Expr
+call = inParens $ do
+  n <- name
+  spaces
   args <- many (spaces *> expr)
-  return $ Exec name args
+  return $
+    case n of
+      FuncName s -> FuncCall s args
+      ProcName s -> ProcCall s args
 
 expr :: GenParser Char st Expr
-expr = try def <|> try exec <|> try slit <|> try flit <|> plit
+expr = try call <|> try varRef <|> strLit
 
-parse :: String -> Either ParseError Expr
-parse = Parsec.parse expr ""
+stmt :: GenParser Char st Stmt
+stmt = try def <|> (E <$> expr)
+
+parse :: String -> Either ParseError Stmt
+parse = Parsec.parse stmt ""
