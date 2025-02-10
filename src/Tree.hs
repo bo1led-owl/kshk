@@ -17,6 +17,8 @@ data Expr
   | BoolLit Bool
   deriving (Show)
 
+data Ret = I Int | Str String deriving (Show)
+
 type Option = String
 
 data StmtOrOption = S Stmt | O Option
