@@ -43,5 +43,5 @@ execDef :: Def -> EState -> EState
 execDef (VarDef s e) st = State {vars = M.insert s e (vars st), funcs = funcs st}
 execDef (FuncDef s names e) st = State {funcs = M.insert s (names, e) (funcs st), vars = vars st}
 
-exec :: M.Map String Expr -> IO ()
-exec = undefined
+exec (D d) st = (execDef d st, return "")
+exec (E e) st = (st, execExpr e st)
