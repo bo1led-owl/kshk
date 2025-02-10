@@ -1,4 +1,4 @@
-module Cat (exec, EState) where
+module Cat (exec, EState(State, vars, funcs)) where
 
 import Data.Foldable
 import qualified Data.Map as M
