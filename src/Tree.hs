@@ -13,3 +13,7 @@ data Expr
   | VarRef String
   | StrLit String
   deriving (Show)
+
+type Option = String
+
+data StmtOrOption = S Stmt | O Option

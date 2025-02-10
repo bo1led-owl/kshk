@@ -1,4 +1,4 @@
-module Cat (exec, EState (State, vars, funcs)) where
+module Cat (exec, EState (ExecutorState, vars, funcs)) where
 
 import Data.Foldable
 import qualified Data.List as L
@@ -21,7 +21,7 @@ cd e st = do
       [x] -> execExpr x st
       _ -> error "Too many args for cd command"
 
-data EState = State
+data EState = ExecutorState
   { vars :: M.Map String Expr,
     funcs :: M.Map String ([String], Expr)
   }
@@ -49,7 +49,7 @@ execExpr (FuncCall s e) st =
     go (s : strs) (e : expr) curState = go strs expr new_state
       where
         new_map = M.insert s e (vars curState)
-        new_state = State {vars = new_map, funcs = funcs curState}
+        new_state = ExecutorState {vars = new_map, funcs = funcs curState}
 execExpr (VarRef s) st = executedRef
   where
     executedRef = execExpr lup st
@@ -65,8 +65,8 @@ execExprTopLevel (ProcCall s e) st = do execCommand s (sequenceA $ args e); retu
 execExprTopLevel e st = execExpr e st
 
 execDef :: Def -> EState -> EState
-execDef (VarDef s e) st = State {vars = M.insert s e (vars st), funcs = funcs st}
-execDef (FuncDef s names e) st = State {funcs = M.insert s (names, e) (funcs st), vars = vars st}
+execDef (VarDef s e) st = st {vars = M.insert s e (vars st)}
+execDef (FuncDef s names e) st = st {funcs = M.insert s (names, e) (funcs st)}
 
 exec (D d) st = (execDef d st, return "")
 exec (E e) st = (st, execExprTopLevel e st)

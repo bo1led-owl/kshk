@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wno-unused-do-bind #-}
 
-module Owl (parse) where
+module Owl (parseForInteractive, parse) where
 
 import Text.Parsec.Char
 import Text.Parsec.Combinator
@@ -84,3 +84,10 @@ stmt = spaces *> (try def <|> (E <$> expr))
 
 parse :: String -> Either ParseError Stmt
 parse = Parsec.parse stmt ""
+
+configOption = do
+  char ':'
+  varName
+
+parseForInteractive :: String -> Either ParseError StmtOrOption
+parseForInteractive = Parsec.parse (try (O <$> configOption) <|> (S <$> stmt)) ""
