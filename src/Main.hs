@@ -51,11 +51,13 @@ main = do
         Just input -> parseAndExecute st input
     parseAndExecute st input = do
       case parseForInteractive input of
-        (Left err) -> outputStrLn $ show err
-        (Right (O opt)) -> handleOption st opt
-        (Right (S s)) -> handleInterrupt (outputStrLn "Cancelled") $ withInterrupt $ handleStmt st s
-      loop st
-    handleOption st opt = loop newSt
+        (Left err) -> do outputStrLn $ show err; loop st
+        (Right (O opt)) -> loop $ handleOption st opt
+        (Right (S s)) ->
+          handleInterrupt (outputStrLn "Cancelled" >> loop st) $
+            withInterrupt $
+              handleStmt st s
+    handleOption st opt = newSt
       where
         newSt = case opt of
           "cwd" -> st {cwd = not $ cwd st}
