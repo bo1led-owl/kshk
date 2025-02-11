@@ -93,6 +93,7 @@ data EState = ExecutorState
 execExpr :: Expr -> EState -> IO Ret
 execExpr (NumLit n) st = return (I n)
 execExpr (StrLit s) st = return (Str s)
+execExpr (BoolLit b) st = return (B b)
 execExpr (ProcCall s e) st = do
   let arg = args e
   let rets = sequenceA arg
@@ -126,7 +127,10 @@ execExpr (VarRef s) st = executedRef
     lup = case M.lookup s (vars st) of
       Nothing -> error "reference to undefined variable"
       Just expr -> expr
-
+execExpr (If cond lhs rhs) st = do
+  r <- execExpr cond st
+  if r == B True then execExpr lhs st else execExpr rhs st
+  
 execExprTopLevel :: Expr -> EState -> IO Ret
 execExprTopLevel (ProcCall s e) st = do
   let arg = args e
