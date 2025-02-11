@@ -134,7 +134,7 @@ cd e st = do
       _ -> error "Too many args for cd command"
 
 data EState = ExecutorState
-  { vars :: M.Map String Expr,
+  { vars :: M.Map String Ret,
     funcs :: M.Map String ([String], Expr)
   }
 
@@ -160,21 +160,22 @@ execExpr (FuncCall s e) st =
     defaultFunc =
       if length e /= length names
         then error "incorrect amount of arguments given to a function"
-        else execExpr fnExpr $ go names e st
+        else do
+          args <- go names e st
+          execExpr fnExpr $! args
     (names, fnExpr) = case M.lookup s (funcs st) of
       Nothing -> error "reference to undefined func"
       Just f -> f
-    go [] [] new_state = new_state
-    go (s : strs) (e : expr) curState = go strs expr new_state
-      where
-        new_map = M.insert s e (vars curState)
-        new_state = ExecutorState {vars = new_map, funcs = funcs curState}
-execExpr (VarRef s) st = executedRef
-  where
-    executedRef = execExpr lup st
-    lup = case M.lookup s (vars st) of
-      Nothing -> error "reference to undefined variable"
-      Just expr -> expr
+    go :: [String] -> [Expr] -> EState -> IO EState
+    go [] [] new_state = return new_state
+    go (s : strs) (e : expr) curState = do
+      r <- execExpr e curState
+      let newMap = M.insert s r (vars curState)
+      go strs expr (ExecutorState {vars = newMap, funcs = funcs curState})
+execExpr (VarRef s) st =
+  return $ case M.lookup s (vars st) of
+    Nothing -> error "reference to undefined variable"
+    Just expr -> expr
 execExpr (If cond lhs rhs) st = do
   r <- execExpr cond st
   if retEq r (B True) then execExpr lhs st else execExpr rhs st
@@ -191,13 +192,16 @@ execExprTopLevel (ProcCall s e) st = do
     args [] = []
 execExprTopLevel e st = execExpr e st
 
-execDef :: Def -> EState -> EState
-execDef (VarDef s e) st = st {vars = M.insert s e (vars st)}
-execDef (FuncDef s names e) st = st {funcs = M.insert s (names, e) (funcs st)}
+execDef :: Def -> EState -> IO EState
+execDef (VarDef s e) st = do
+  r <- execExpr e st
+  return $ st {vars = M.insert s r (vars st)}
+execDef (FuncDef s names e) st = return $ st {funcs = M.insert s (names, e) (funcs st)}
 
 showRet (I i) = show i
 showRet (Str s) = if s == "" then "" else read $ show s
 showRet (B b) = if b then "#t" else "#f"
 
+exec :: Stmt -> EState -> (IO EState, IO String)
 exec (D d) st = (execDef d st, return "")
-exec (E e) st = (st, showRet <$> execExprTopLevel e st)
+exec (E e) st = (return st, showRet <$> execExprTopLevel e st)

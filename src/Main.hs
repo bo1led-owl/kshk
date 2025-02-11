@@ -32,7 +32,7 @@ getPrompt st = do
 main :: IO ()
 main = do
   env <- getEnvironment
-  let startVars = M.fromList (map (second StrLit) env)
+  let startVars = M.fromList (map (second Str) env)
   runInputT defaultSettings (loop (initState startVars))
   where
     loop :: IState -> InputT IO ()
@@ -61,4 +61,5 @@ main = do
           outputStrLn out
         else
           outputStr out
-      loop st {executorState = newEState}
+      newS <- liftIO newEState
+      loop st {executorState = newS}
