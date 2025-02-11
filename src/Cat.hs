@@ -58,7 +58,7 @@ minus es st = do
             rest
   return $ I ret
   where
-    args = traverse (`execExpr` st) es
+    args = traverse (`execExpr` st) $! es
 
 mult :: [Expr] -> EState -> IO Ret
 mult es st = do
@@ -73,7 +73,7 @@ mult es st = do
           xs
   return $ I ret
   where
-    args = traverse (`execExpr` st) es
+    args = traverse (`execExpr` st) $! es
 
 boolFromB :: Ret -> Bool
 boolFromB (B True) = True
@@ -135,7 +135,7 @@ plus es st = do
           xs
   return $ I ret
   where
-    args = traverse (`execExpr` st) es
+    args = traverse (`execExpr` st) $! es
 
 cd :: [Expr] -> EState -> IO Ret
 cd e st = do
