@@ -53,7 +53,7 @@ main = do
       case parseForInteractive input of
         (Left err) -> do outputStrLn $ show err; loop st
         (Right (O opt)) -> handleOption st opt
-        (Right (S s)) -> handleStmt st s
+        (Right (S s)) -> handleInterrupt (outputStrLn "Cancelled." >> loop st) $ withInterrupt $ handleStmt st s
     handleOption st opt = loop newSt
       where
         newSt = case opt of
