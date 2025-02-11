@@ -21,8 +21,23 @@ builtin =
     ("<", lt),
     (">", gt),
     ("<=", le),
-    (">=", ge)
+    (">=", ge),
+    ("pipe", layingPipes)
   ]
+
+layingPipes :: [Expr] -> EState -> IO Ret
+layingPipes es st = do
+  let procs = processes
+  let procsExecuted = map (\(name, proc) -> (name, fmap show <$> traverse (`execExpr` st) proc)) procs
+  return (Str "")
+  where
+    processes =
+      map
+        ( \x -> case x of
+            ProcCall s es -> (s, es)
+            _ -> error "tried to pipe something but process"
+        )
+        es
 
 goida :: [Expr] -> EState -> IO Ret
 goida es st = return (Str "СВО")
