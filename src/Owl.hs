@@ -31,10 +31,10 @@ name = try (FuncName <$> funcName) <|> ProcName <$> procName
       try (string "+")
         <|> try (string "-")
         <|> try (string "*")
-        <|> try (string "<")
-        <|> try (string ">")
         <|> try (string "<=")
         <|> try (string ">=")
+        <|> try (string "<")
+        <|> try (string ">")
         <|> try (string "==")
         <|> try (string "!=")
         <|> varName

@@ -73,8 +73,11 @@ genericCmp cmp (x : y : []) st = do
 genericCmp cmp (x : y : rest) st = do
   lhs <- execExpr x st
   rhs <- execExpr y st
-  tailRes <- genericCmp cmp (y : rest) st
-  return $ B $ ((cmp lhs rhs) && boolFromB tailRes)
+  if not $ cmp lhs rhs
+    then
+      return $ B False
+    else
+      genericCmp cmp (y : rest) st
 genericCmp cmp (x : []) _ = error "wrong amount of arguments for comparison"
 
 eq = genericCmp retEq
