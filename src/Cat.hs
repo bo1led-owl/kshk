@@ -26,7 +26,8 @@ builtins =
 layingPipes :: [Expr] -> EState -> IO Ret
 layingPipes es st = do
   let procs = processes
-  let procsExecuted = map (\(name, proc) -> (name, fmap show <$> traverse (`execExpr` st) proc)) procs
+  let procsExecuted = map (\(name, proc) -> (name, fmap showRet <$> traverse (`execExpr` st) proc)) procs
+  pipin procsExecuted
   return (Str "")
   where
     processes =
@@ -119,7 +120,7 @@ scons es st = do
           xs
   return $ Str ret
   where
-    args = traverse (`execExpr` st) es
+    args = traverse (`execExpr` st) $! es
 
 plus :: [Expr] -> EState -> IO Ret
 plus es st = do
