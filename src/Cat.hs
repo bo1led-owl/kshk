@@ -17,14 +17,17 @@ goida es st = return (Str "СВО")
 minus :: [Expr] -> EState -> IO Ret
 minus es st = do
   xs <- args
-  let ret =
-        foldl
-          ( \acc x -> case x of
-              I n -> acc - n
-              _ -> error "tried to diff not a number :)"
-          )
-          0
-          xs
+  let ret = case xs of
+        [] -> error "incorrect amount of arguments"
+        [I n] -> (-n)
+        (I n : rest) ->
+          foldl
+            ( \acc x -> case x of
+                I n -> acc - n
+                _ -> error "tried to diff not a number"
+            )
+            n
+            rest
   return $ I ret
   where
     args = traverse (`execExpr` st) es
@@ -130,7 +133,7 @@ execExpr (VarRef s) st = executedRef
 execExpr (If cond lhs rhs) st = do
   r <- execExpr cond st
   if r == B True then execExpr lhs st else execExpr rhs st
-  
+
 execExprTopLevel :: Expr -> EState -> IO Ret
 execExprTopLevel (ProcCall s e) st = do
   let arg = args e
