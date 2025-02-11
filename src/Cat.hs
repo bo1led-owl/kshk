@@ -1,15 +1,13 @@
 module Cat (exec, EState (ExecutorState, vars, funcs)) where
 
-import Data.Foldable
 import qualified Data.List as L
 import qualified Data.Map as M
-import Data.Maybe
 import Spearfish
-import System.Console.Haskeline (outputStrLn)
 import System.Directory (getHomeDirectory, setCurrentDirectory)
 import Tree
 
-builtin =
+builtins :: [(String, [Expr] -> EState -> IO Ret)]
+builtins =
   [ ("cd", cd),
     ("+", plus),
     ("scons", scons),
@@ -40,7 +38,7 @@ layingPipes es st = do
         es
 
 goida :: [Expr] -> EState -> IO Ret
-goida es st = return (Str "СВО")
+goida _ _ = return (Str "СВО")
 
 minus :: [Expr] -> EState -> IO Ret
 minus es st = do
@@ -75,11 +73,6 @@ mult es st = do
   where
     args = traverse (`execExpr` st) $! es
 
-boolFromB :: Ret -> Bool
-boolFromB (B True) = True
-boolFromB (B False) = False
-boolFromB _ = undefined
-
 genericCmp :: (Ret -> Ret -> Bool) -> [Expr] -> EState -> IO Ret
 genericCmp cmp (x : y : []) st = do
   lhs <- execExpr x st
@@ -93,18 +86,24 @@ genericCmp cmp (x : y : rest) st = do
       return $ B False
     else
       genericCmp cmp (y : rest) st
-genericCmp cmp (x : []) _ = error "wrong amount of arguments for comparison"
+genericCmp _ _ _ = error "wrong amount of arguments for comparison"
 
+eq :: [Expr] -> EState -> IO Ret
 eq = genericCmp retEq
 
+neq :: [Expr] -> EState -> IO Ret
 neq = genericCmp (\x y -> not $ retEq x y)
 
+lt :: [Expr] -> EState -> IO Ret
 lt = genericCmp retLt
 
+gt :: [Expr] -> EState -> IO Ret
 gt = genericCmp (\x y -> (not $ retLt x y) && (not $ retEq x y))
 
+le :: [Expr] -> EState -> IO Ret
 le = genericCmp (\x y -> retLt x y || retEq x y)
 
+ge :: [Expr] -> EState -> IO Ret
 ge = genericCmp (\x y -> (not $ retLt x y))
 
 scons :: [Expr] -> EState -> IO Ret
@@ -154,9 +153,9 @@ data EState = ExecutorState
   }
 
 execExpr :: Expr -> EState -> IO Ret
-execExpr (NumLit n) st = return (I n)
-execExpr (StrLit s) st = return (Str s)
-execExpr (BoolLit b) st = return (B b)
+execExpr (NumLit n) _ = return (I n)
+execExpr (StrLit s) _ = return (Str s)
+execExpr (BoolLit b) _ = return (B b)
 execExpr (ProcCall s e) st = do
   let arg = args e
   let rets = sequenceA arg
@@ -171,7 +170,7 @@ execExpr (FuncCall s e) st =
     Nothing -> defaultFunc
     Just builtin -> builtin e st
   where
-    isBuiltin = L.lookup s builtin
+    isBuiltin = L.lookup s builtins
     defaultFunc =
       if length e /= length names
         then error "incorrect amount of arguments given to a function"
@@ -187,6 +186,7 @@ execExpr (FuncCall s e) st =
       r <- execExpr e curState
       let newMap = M.insert s r (vars curState)
       go strs expr (ExecutorState {vars = newMap, funcs = funcs curState})
+    go _ _ _ = undefined
 execExpr (VarRef s) st =
   return $ case M.lookup s (vars st) of
     Nothing -> error "reference to undefined variable"
@@ -213,6 +213,7 @@ execDef (VarDef s e) st = do
   return $ st {vars = M.insert s r (vars st)}
 execDef (FuncDef s names e) st = return $ st {funcs = M.insert s (names, e) (funcs st)}
 
+showRet :: Ret -> String
 showRet (I i) = show i
 showRet (Str s) = if s == "" then "" else read $ show s
 showRet (B b) = if b then "#t" else "#f"

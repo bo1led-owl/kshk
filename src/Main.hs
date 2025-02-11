@@ -1,7 +1,7 @@
 module Main where
 
 import Cat
-import Control.Arrow
+import Control.Arrow hiding (loop)
 import Control.Monad.IO.Class
 import qualified Data.List as L
 import qualified Data.Map as M
@@ -16,11 +16,17 @@ data IState = InteractiveState
     cwd :: Bool
   }
 
+initState :: M.Map String Ret -> IState
 initState startVars =
   InteractiveState
     { executorState = ExecutorState {vars = startVars, funcs = M.empty},
       cwd = False
     }
+
+setupSettings :: IO (Settings IO)
+setupSettings = do
+  home <- getHomeDirectory
+  return $ defaultSettings {historyFile = Just (home ++ "/.kshk_history")}
 
 getPrompt :: IState -> IO String
 getPrompt st = do
@@ -33,11 +39,11 @@ main :: IO ()
 main = do
   env <- getEnvironment
   let startVars = M.fromList (map (second Str) env)
-  runInputT defaultSettings (loop (initState startVars))
+  settings <- setupSettings
+  runInputT settings (loop (initState startVars))
   where
     loop :: IState -> InputT IO ()
     loop st = do
-      dir <- liftIO getCurrentDirectory
       prompt <- liftIO $ getPrompt st
       minput <- getInputLine $ prompt
       case minput of
