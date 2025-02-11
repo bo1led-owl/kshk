@@ -28,8 +28,7 @@ retEq _ _ = error "different types of arguments for comparison"
 retLt :: Ret -> Ret -> Bool
 retLt (I x) (I y) = x < y
 retLt (Str x) (Str y) = x < y
-retLt (B x) (B y) = not x || y
-retLt _ _ = error "different types of arguments for comparison"
+retLt _ _ = error "wrong types of arguments for comparison"
 
 type Option = String
 
