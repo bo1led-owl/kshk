@@ -177,7 +177,7 @@ execExpr (FuncCall s e) st =
         then error "incorrect amount of arguments given to a function"
         else do
           args <- go names e st
-          execExpr fnExpr $! args
+          execExpr fnExpr args
     (names, fnExpr) = case M.lookup s (funcs st) of
       Nothing -> error "reference to undefined func"
       Just f -> f
