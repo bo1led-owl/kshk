@@ -9,7 +9,20 @@ import System.Console.Haskeline (outputStrLn)
 import System.Directory (getHomeDirectory, setCurrentDirectory)
 import Tree
 
-builtin = [("cd", cd), ("+", plus), ("scons", scons), ("*", mult), ("-", minus), ("ГОЙДА", goida)]
+builtin =
+  [ ("cd", cd),
+    ("+", plus),
+    ("scons", scons),
+    ("*", mult),
+    ("-", minus),
+    ("ГОЙДА", goida),
+    ("==", eq),
+    ("!=", neq),
+    ("<", lt),
+    (">", gt),
+    ("<=", le),
+    (">=", ge)
+  ]
 
 goida :: [Expr] -> EState -> IO Ret
 goida es st = return (Str "СВО")
@@ -46,6 +59,35 @@ mult es st = do
   return $ I ret
   where
     args = traverse (`execExpr` st) es
+
+boolFromB :: Ret -> Bool
+boolFromB (B True) = True
+boolFromB (B False) = False
+boolFromB _ = undefined
+
+genericCmp :: (Ret -> Ret -> Bool) -> [Expr] -> EState -> IO Ret
+genericCmp cmp (x : y : []) st = do
+  lhs <- execExpr x st
+  rhs <- execExpr y st
+  return $ B $ cmp lhs rhs
+genericCmp cmp (x : y : rest) st = do
+  lhs <- execExpr x st
+  rhs <- execExpr y st
+  tailRes <- genericCmp cmp (y : rest) st
+  return $ B $ ((cmp lhs rhs) && boolFromB tailRes)
+genericCmp cmp (x : []) _ = error "wrong amount of arguments for comparison"
+
+eq = genericCmp retEq
+
+neq = genericCmp (\x y -> not $ retEq x y)
+
+lt = genericCmp retLt
+
+gt = genericCmp (\x y -> (not $ retLt x y) && (not $ retEq x y))
+
+le = genericCmp (\x y -> retLt x y || retEq x y)
+
+ge = genericCmp (\x y -> (not $ retLt x y))
 
 scons :: [Expr] -> EState -> IO Ret
 scons es st = do
@@ -132,7 +174,7 @@ execExpr (VarRef s) st = executedRef
       Just expr -> expr
 execExpr (If cond lhs rhs) st = do
   r <- execExpr cond st
-  if r == B True then execExpr lhs st else execExpr rhs st
+  if retEq r (B True) then execExpr lhs st else execExpr rhs st
 
 execExprTopLevel :: Expr -> EState -> IO Ret
 execExprTopLevel (ProcCall s e) st = do

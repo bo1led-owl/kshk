@@ -17,7 +17,19 @@ data Expr
   | BoolLit Bool
   deriving (Show)
 
-data Ret = I Int | Str String | B Bool deriving (Show, Eq)
+data Ret = I Int | Str String | B Bool deriving (Show)
+
+retEq :: Ret -> Ret -> Bool
+retEq (I x) (I y) = x == y
+retEq (Str x) (Str y) = x == y
+retEq (B x) (B y) = x == y
+retEq _ _ = error "different types of arguments for `==`"
+
+retLt :: Ret -> Ret -> Bool
+retLt (I x) (I y) = x == y
+retLt (Str x) (Str y) = x == y
+retLt (B x) (B y) = x == y
+retLt _ _ = error "different types of arguments for `==`"
 
 type Option = String
 
